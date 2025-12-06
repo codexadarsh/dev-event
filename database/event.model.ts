@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema } from "mongoose";
 
 // TypeScript interface for Event document
 export interface IEvent extends Document {
@@ -25,7 +25,7 @@ const eventSchema = new Schema<IEvent>(
   {
     title: {
       type: String,
-      required: [true, 'Event title is required'],
+      required: [true, "Event title is required"],
       trim: true,
     },
     slug: {
@@ -36,66 +36,66 @@ const eventSchema = new Schema<IEvent>(
     },
     description: {
       type: String,
-      required: [true, 'Event description is required'],
+      required: [true, "Event description is required"],
       trim: true,
     },
     overview: {
       type: String,
-      required: [true, 'Event overview is required'],
+      required: [true, "Event overview is required"],
       trim: true,
     },
     image: {
       type: String,
-      required: [true, 'Event image is required'],
+      required: [true, "Event image is required"],
     },
     venue: {
       type: String,
-      required: [true, 'Event venue is required'],
+      required: [true, "Event venue is required"],
       trim: true,
     },
     location: {
       type: String,
-      required: [true, 'Event location is required'],
+      required: [true, "Event location is required"],
       trim: true,
     },
     date: {
       type: String,
-      required: [true, 'Event date is required'],
+      required: [true, "Event date is required"],
     },
     time: {
       type: String,
-      required: [true, 'Event time is required'],
+      required: [true, "Event time is required"],
     },
     mode: {
       type: String,
-      required: [true, 'Event mode is required'],
-      enum: ['online', 'offline', 'hybrid'],
+      required: [true, "Event mode is required"],
+      enum: ["online", "offline", "hybrid"],
       lowercase: true,
     },
     audience: {
       type: String,
-      required: [true, 'Target audience is required'],
+      required: [true, "Target audience is required"],
       trim: true,
     },
     agenda: {
       type: [String],
-      required: [true, 'Event agenda is required'],
+      required: [true, "Event agenda is required"],
       validate: {
         validator: (arr: string[]) => arr.length > 0,
-        message: 'Agenda must contain at least one item',
+        message: "Agenda must contain at least one item",
       },
     },
     organizer: {
       type: String,
-      required: [true, 'Event organizer is required'],
+      required: [true, "Event organizer is required"],
       trim: true,
     },
     tags: {
       type: [String],
-      required: [true, 'Event tags are required'],
+      required: [true, "Event tags are required"],
       validate: {
         validator: (arr: string[]) => arr.length > 0,
-        message: 'At least one tag is required',
+        message: "At least one tag is required",
       },
     },
   },
@@ -105,18 +105,18 @@ const eventSchema = new Schema<IEvent>(
 );
 
 // Pre-save hook: Generate slug from title and normalize date/time
-eventSchema.pre('save', async function (next) {
+eventSchema.pre("save", async function () {
   const event = this as IEvent;
 
   // Generate slug only if title is new or modified
-  if (event.isModified('title')) {
+  if (event.isModified("title")) {
     event.slug = event.title
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/--+/g, '-') // Replace multiple hyphens with single hyphen
-      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+      .replace(/[^\w\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 
     // Ensure slug uniqueness by appending a timestamp if needed
     const existingEvent = await mongoose.models.Event.findOne({
@@ -130,20 +130,20 @@ eventSchema.pre('save', async function (next) {
   }
 
   // Normalize date to ISO format if modified
-  if (event.isModified('date')) {
+  if (event.isModified("date")) {
     try {
       const parsedDate = new Date(event.date);
       if (isNaN(parsedDate.getTime())) {
-        throw new Error('Invalid date format');
+        throw new Error("Invalid date format");
       }
-      event.date = parsedDate.toISOString().split('T')[0]; // Store as YYYY-MM-DD
+      event.date = parsedDate.toISOString().split("T")[0]; // Store as YYYY-MM-DD
     } catch (error) {
-      return next(new Error('Date must be a valid date string'));
+      throw new Error("Date must be a valid date string");
     }
   }
 
   // Normalize time format if modified (convert to HH:MM format)
-  if (event.isModified('time')) {
+  if (event.isModified("time")) {
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     const time12HourRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i;
 
@@ -158,24 +158,19 @@ eventSchema.pre('save', async function (next) {
         const minutes = match[2];
         const period = match[3].toUpperCase();
 
-        if (period === 'PM' && hours !== 12) hours += 12;
-        if (period === 'AM' && hours === 12) hours = 0;
+        if (period === "PM" && hours !== 12) hours += 12;
+        if (period === "AM" && hours === 12) hours = 0;
 
-        event.time = `${hours.toString().padStart(2, '0')}:${minutes}`;
+        event.time = `${hours.toString().padStart(2, "0")}:${minutes}`;
       }
     } else {
-      return next(new Error('Time must be in HH:MM or HH:MM AM/PM format'));
+      throw new Error("Time must be in HH:MM or HH:MM AM/PM format");
     }
   }
-
-  next();
 });
-
-// Create index on slug for faster queries
-eventSchema.index({ slug: 1 });
 
 // Export the model
 const Event: Model<IEvent> =
-  mongoose.models.Event || mongoose.model<IEvent>('Event', eventSchema);
+  mongoose.models.Event || mongoose.model<IEvent>("Event", eventSchema);
 
 export default Event;
