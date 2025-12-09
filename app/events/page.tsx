@@ -9,7 +9,7 @@ const page = async () => {
   const { events } = await response.json();
   return (
     <div className="mt-20 space-y-7">
-      <h3>Featured Events</h3>
+      <h1 className="text-3xl">All Events</h1>
 
       <ul className="events">
         {events &&
