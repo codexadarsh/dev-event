@@ -3,79 +3,89 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 
-const Page = () => {
+export default function LoginPage() {
   const router = useRouter();
+
   const [user, setUser] = useState({
     email: "",
     password: "",
   });
-  const [buttonDisabled, setButtonDisabled] = useState(true);
+
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setButtonDisabled(!(user.email && user.password));
-  }, [user]);
+  const isDisabled = !user.email || !user.password || loading;
 
-  const onLogin = async () => {
+  const onLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isDisabled) return;
+
     try {
       setLoading(true);
-
-      const response = await axios.post("/api/users/login", user);
-      console.log("Login success", response.data);
-      toast.success(response.data.message || "Login successful");
+      const { data } = await axios.post("/api/users/login", user);
+      toast.success(data.message || "Login successful");
       router.push("/profile");
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error?.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    if (user.email.length > 0 && user.password.length > 0) {
-      setButtonDisabled(false);
-    } else {
-      setButtonDisabled(true);
-    }
-  }, [user]);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h2>{loading ? "Processing..." : "Login"}</h2>
-      <hr />
+    <div className="flex min-h-screen items-center justify-center  px-4">
+      <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6">
+        <h1 className="mb-6 text-center text-2xl font-semibold text-white">
+          {loading ? "Processing..." : "Login"}
+        </h1>
 
-      <label htmlFor="email">Email</label>
-      <input
-        id="email"
-        type="email"
-        value={user.email}
-        onChange={(e) => setUser({ ...user, email: e.target.value })}
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-white"
-      />
+        <form onSubmit={onLogin} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="email" className="text-sm text-gray-300">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={user.email}
+              onChange={(e) => setUser({ ...user, email: e.target.value })}
+              className="rounded-md border border-gray-700 bg-black px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-      <label htmlFor="password">Password</label>
-      <input
-        id="password"
-        type="password"
-        value={user.password}
-        onChange={(e) => setUser({ ...user, password: e.target.value })}
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-white"
-      />
+          <div className="flex flex-col gap-1">
+            <label htmlFor="password" className="text-sm text-gray-300">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={user.password}
+              onChange={(e) => setUser({ ...user, password: e.target.value })}
+              className="rounded-md border border-gray-700 bg-black px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-      <button
-        disabled={buttonDisabled}
-        onClick={onLogin}
-        className="p-2 border disabled:opacity-50"
-      >
-        {buttonDisabled ? "Enter details" : "Login"}
-      </button>
+          <button
+            type="submit"
+            disabled={isDisabled}
+            className="mt-2 rounded-md bg-blue-600 py-2 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 hover:bg-blue-700"
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
 
-      <Link href="/signup" className="text-blue-500 mt-4">
-        Sign Up
-      </Link>
+        <p className="mt-4 text-center text-sm text-gray-400">
+          Don’t have an account?{" "}
+          <Link href="/signup" className="text-blue-500 hover:underline">
+            Sign Up
+          </Link>
+        </p>
+      </div>
     </div>
   );
-};
-
-export default Page;
+}

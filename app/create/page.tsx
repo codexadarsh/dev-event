@@ -3,14 +3,11 @@
 
 import { FormEvent, useState } from "react";
 
-type Mode = "online" | "offline" | "hybrid";
-
 export default function EventForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // For user input of agenda & tags
   const [agendaText, setAgendaText] = useState("");
   const [tagsText, setTagsText] = useState("");
 
@@ -24,23 +21,19 @@ export default function EventForm() {
       const form = e.currentTarget;
       const formData = new FormData(form);
 
-      // Parse agenda (one item per line)
       const agendaArray = agendaText
         .split("\n")
-        .map((item) => item.trim())
+        .map((i) => i.trim())
         .filter(Boolean);
 
-      // Parse tags (comma-separated)
       const tagsArray = tagsText
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
 
-      // Remove any existing agenda/tags primitive entries
       formData.delete("agenda");
       formData.delete("tags");
 
-      // Send as JSON strings (handle JSON.parse on the server)
       formData.append("agenda", JSON.stringify(agendaArray));
       formData.append("tags", JSON.stringify(tagsArray));
 
@@ -50,10 +43,7 @@ export default function EventForm() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to create event");
-      }
+      if (!res.ok) throw new Error(data?.message || "Failed to create event");
 
       setSuccess("Event created successfully");
       form.reset();
@@ -67,244 +57,152 @@ export default function EventForm() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <h1 className="text-3xl font-semibold mb-6">Create Event</h1>
+    <div className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="mb-8 text-3xl font-semibold">Create Event</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-6"
         encType="multipart/form-data"
+        className="space-y-6 bg-dark-100 p-8 rounded-xl"
       >
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="title">
-            Title*
-          </label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            required
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Event title"
-          />
-        </div>
+        {/* TITLE */}
+        <Field label="Title">
+          <input name="title" required placeholder="Event title" />
+        </Field>
 
-        {/* Description */}
-        <div>
-          <label
-            className="block text-sm font-medium mb-1"
-            htmlFor="description"
-          >
-            Description*
-          </label>
+        {/* DESCRIPTION */}
+        <Field label="Description">
           <textarea
-            id="description"
             name="description"
-            required
             rows={3}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            required
             placeholder="Short description of the event"
           />
-        </div>
+        </Field>
 
-        {/* Overview */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="overview">
-            Overview*
-          </label>
+        {/* OVERVIEW */}
+        <Field label="Overview">
           <textarea
-            id="overview"
             name="overview"
-            required
             rows={4}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            required
             placeholder="Detailed overview of the event"
           />
-        </div>
+        </Field>
 
-        {/* Image */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="image">
-            Image*
-          </label>
-          <input
-            id="image"
-            name="image"
-            type="file"
-            accept="image/*"
-            required
-            className="w-full text-sm"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            This will be uploaded (e.g. to Cloudinary) in your API route.
+        {/* IMAGE */}
+        <Field label="Image">
+          <input name="image" type="file" accept="image/*" required />
+          <p className="text-xs text-gray-500">
+            Uploaded via API (Cloudinary, S3, etc.)
           </p>
+        </Field>
+
+        {/* VENUE + LOCATION */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Venue">
+            <input name="venue" required />
+          </Field>
+
+          <Field label="Location">
+            <input name="location" required />
+          </Field>
         </div>
 
-        {/* Venue */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="venue">
-            Venue*
-          </label>
-          <input
-            id="venue"
-            name="venue"
-            type="text"
-            required
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g. Hall A, Main Campus"
-          />
+        {/* DATE + TIME */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Date">
+            <input type="date" name="date" required />
+          </Field>
+
+          <Field label="Time">
+            <input type="time" name="time" required />
+          </Field>
         </div>
 
-        {/* Location */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="location">
-            Location*
-          </label>
-          <input
-            id="location"
-            name="location"
-            type="text"
-            required
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="City / Country / Online link info"
-          />
-        </div>
+        {/* MODE + AUDIENCE */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Mode">
+            <select name="mode" defaultValue="" required>
+              <option value="" disabled>
+                Select mode
+              </option>
+              <option value="online">Online</option>
+              <option value="offline">Offline</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </Field>
 
-        {/* Date & Time */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="date">
-              Date*
-            </label>
+          <Field label="Audience">
             <input
-              id="date"
-              name="date"
-              type="date"
+              name="audience"
               required
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Students, Developers, Designers"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="time">
-              Time*
-            </label>
-            <input
-              id="time"
-              name="time"
-              type="time"
-              required
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          </Field>
         </div>
 
-        {/* Mode */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="mode">
-            Mode*
-          </label>
-          <select
-            id="mode"
-            name="mode"
-            required
-            defaultValue=""
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="" disabled>
-              Select mode
-            </option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-            <option value="hybrid">Hybrid</option>
-          </select>
-        </div>
-
-        {/* Audience */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="audience">
-            Audience*
-          </label>
-          <input
-            id="audience"
-            name="audience"
-            type="text"
-            required
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g. Students, Developers, Designers"
-          />
-        </div>
-
-        {/* Agenda (string[]) */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="agenda">
-            Agenda* (one item per line)
-          </label>
+        {/* AGENDA */}
+        <Field label="Agenda (one item per line)">
           <textarea
-            id="agenda"
             rows={4}
             value={agendaText}
             onChange={(e) => setAgendaText(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder={`Intro & Welcome\nKeynote Session\nQ&A\nNetworking`}
+            placeholder={`Intro\nKeynote\nQ&A\nNetworking`}
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Will be sent as a JSON array string in the <code>agenda</code>{" "}
-            field.
-          </p>
-        </div>
+        </Field>
 
-        {/* Organizer */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="organizer">
-            Organizer*
-          </label>
-          <input
-            id="organizer"
-            name="organizer"
-            type="text"
-            required
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Organizer / Organization name"
-          />
-        </div>
+        {/* ORGANIZER */}
+        <Field label="Organizer">
+          <input name="organizer" required />
+        </Field>
 
-        {/* Tags (string[]) */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="tags">
-            Tags* (comma separated)
-          </label>
+        {/* TAGS */}
+        <Field label="Tags (comma separated)">
           <input
-            id="tags"
-            type="text"
             value={tagsText}
             onChange={(e) => setTagsText(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="tech, workshop, hackathon"
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Will be sent as a JSON array string in the <code>tags</code> field.
-          </p>
-        </div>
+        </Field>
 
-        {/* Status */}
+        {/* STATUS */}
         {(error || success) && (
-          <div
-            className={`text-sm ${error ? "text-red-600" : "text-green-600"}`}
-          >
+          <p className={`text-sm ${error ? "text-red-600" : "text-green-600"}`}>
             {error || success}
-          </div>
+          </p>
         )}
 
-        {/* Submit */}
+        {/* SUBMIT */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:bg-gray-50"
+          className="w-full rounded-md bg-blue-600 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "Creating..." : "Create Event"}
         </button>
       </form>
+    </div>
+  );
+}
+
+/* ---------- */
+/* Field UI   */
+/* ---------- */
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium">{label}</label>
+      <div className="flex flex-col gap-1 [&_input]:w-full [&_textarea]:w-full [&_select]:w-full [&_input]:rounded-md [&_textarea]:rounded-md [&_select]:rounded-md [&_input]:border [&_textarea]:border [&_select]:border [&_input]:px-3 [&_textarea]:px-3 [&_select]:px-3 [&_input]:py-2 [&_textarea]:py-2 [&_select]:py-2 [&_input]:text-sm [&_textarea]:text-sm [&_select]:text-sm focus-within:[&_input]:ring-2 focus-within:[&_textarea]:ring-2 focus-within:[&_select]:ring-2 focus-within:[&_input]:ring-blue-500 focus-within:[&_textarea]:ring-blue-500 focus-within:[&_select]:ring-blue-500">
+        {children}
+      </div>
     </div>
   );
 }
